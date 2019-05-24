@@ -48,4 +48,5 @@ typings/
 /.idea
 \.rpt2_cache/
 
-dist
+# commented out so it can be installed from my fork
+#dist
