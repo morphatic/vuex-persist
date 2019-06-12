@@ -153,7 +153,16 @@
                * @param {Store<S>} store
                */
               this.plugin = function (store) {
-                  (_this.restoreState(_this.key, _this.storage)).then(function (savedState) {
+                  /**
+                   * For async stores, we're capturing the Promise returned
+                   * by the `restoreState()` function in a `restored` property
+                   * on the store itself. This would allow app developers to
+                   * determine when and if the store's state has indeed been
+                   * refreshed. This approach was suggested by GitHub user @hotdogee.
+                   * See https://github.com/championswimmer/vuex-persist/pull/118#issuecomment-500914963
+                   * @since 2.1.0
+                   */
+                  store.restored = (_this.restoreState(_this.key, _this.storage)).then(function (savedState) {
                       /**
                        * If in strict mode, do only via mutation
                        */
@@ -163,17 +172,6 @@
                       else {
                           store.replaceState(merge(store.state, savedState || {}));
                       }
-                      /**
-                       * Notify the app that the state has been restored, and
-                       * set a flag that can be used to prevent state restores
-                       * from happening on other pages. (Note: this is one of
-                       * those rare cases when semicolon is necessary since ASI
-                       * won't insert one between two lines that end and begin
-                       * with parentheses.)
-                       * @since 2.1.0
-                       */
-                      store._vm.$root.$data['vuexPersistStateRestored'] = true;
-                      store._vm.$root.$emit('vuexPersistStateRestored');
                       _this.subscriber(store)(function (mutation, state) {
                           if (_this.filter(mutation)) {
                               _this._mutex.enqueue(_this.saveState(_this.key, _this.reducer(state), _this.storage));

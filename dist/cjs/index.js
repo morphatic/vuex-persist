@@ -164,7 +164,16 @@ class VuexPersistence {
              * @param {Store<S>} store
              */
             this.plugin = (store) => {
-                (this.restoreState(this.key, this.storage)).then((savedState) => {
+                /**
+                 * For async stores, we're capturing the Promise returned
+                 * by the `restoreState()` function in a `restored` property
+                 * on the store itself. This would allow app developers to
+                 * determine when and if the store's state has indeed been
+                 * refreshed. This approach was suggested by GitHub user @hotdogee.
+                 * See https://github.com/championswimmer/vuex-persist/pull/118#issuecomment-500914963
+                 * @since 2.1.0
+                 */
+                store.restored = (this.restoreState(this.key, this.storage)).then((savedState) => {
                     /**
                      * If in strict mode, do only via mutation
                      */
@@ -174,17 +183,6 @@ class VuexPersistence {
                     else {
                         store.replaceState(merge(store.state, savedState || {}));
                     }
-                    /**
-                     * Notify the app that the state has been restored, and
-                     * set a flag that can be used to prevent state restores
-                     * from happening on other pages. (Note: this is one of
-                     * those rare cases when semicolon is necessary since ASI
-                     * won't insert one between two lines that end and begin
-                     * with parentheses.)
-                     * @since 2.1.0
-                     */
-                    store._vm.$root.$data['vuexPersistStateRestored'] = true;
-                    store._vm.$root.$emit('vuexPersistStateRestored');
                     this.subscriber(store)((mutation, state) => {
                         if (this.filter(mutation)) {
                             this._mutex.enqueue(this.saveState(this.key, this.reducer(state), this.storage));
